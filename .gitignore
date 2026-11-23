@@ -1,0 +1,22 @@
+# Секреты
+.env
+.env.*
+!.env.example
+
+# Данные и модели — только на сервере
+data/
+models/
+*.db
+*.db-*
+*.sqlite
+
+# Сборка и зависимости
+node_modules/
+.svelte-kit/
+build/
+dist/
+
+# Служебное
+.DS_Store
+*.log
+.claude/settings.local.json

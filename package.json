@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "start": "node --env-file=.env build",
     "gen-key": "node scripts/gen-key.js",
-    "hash-password": "node scripts/hash-password.js"
+    "hash-password": "node scripts/hash-password.js",
+    "test:e2e": "bash scripts/e2e.sh"
   },
   "engines": {
     "node": ">=22"

@@ -1,0 +1,27 @@
+# Служба приложения на main-сервере (SPEC 12.1).
+# Установка: cp deploy/mct.service /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now mct
+[Unit]
+Description=MCT: дневник метакогнитивной терапии
+After=network.target
+
+[Service]
+Type=simple
+User=mct
+Group=mct
+WorkingDirectory=/opt/mct/app
+EnvironmentFile=/opt/mct/.env
+ExecStart=/usr/bin/node build
+Restart=on-failure
+RestartSec=5
+
+# Ограничения: приложение может писать только в папку с базой
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/opt/mct/data
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,32 @@
+# Служба голоса Silero (SPEC 12.3). Только 127.0.0.1:3011.
+# Установка: deploy/setup-tts.sh на сервере.
+[Unit]
+Description=MCT: синтез речи Silero
+After=network.target
+
+[Service]
+Type=simple
+User=mct
+Group=mct
+WorkingDirectory=/opt/mct/app/tts
+Environment=TTS_MODEL=/opt/mct/tts-models/v4_ru.pt
+Environment=TTS_PORT=3011
+Environment=TTS_THREADS=2
+ExecStart=/opt/mct/tts-venv/bin/python -u /opt/mct/app/tts/server.py
+Restart=on-failure
+RestartSec=5
+
+# Не мешать остальным службам сервера
+CPUQuota=200%
+MemoryMax=2G
+Nice=5
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

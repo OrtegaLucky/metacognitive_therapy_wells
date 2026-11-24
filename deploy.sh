@@ -19,7 +19,7 @@ npm run build
 echo "== Подготовка файлов для выкладки"
 rm -rf .deploy
 mkdir -p .deploy/src/lib/server
-cp -r build content migrations scripts package.json package-lock.json .deploy/
+cp -r build content migrations scripts tts package.json package-lock.json .deploy/
 cp src/lib/server/password.js .deploy/src/lib/server/
 
 echo "== Выкладка на $HOST:$DEST ${DRY:+(пробный прогон)}"
@@ -38,6 +38,7 @@ ssh "$HOST" "set -e; cd $DEST
 		npm ci --omit=dev --no-audit --no-fund && cp package-lock.json .installed-lock
 	fi
 	systemctl restart mct
+	systemctl is-enabled --quiet mct-tts && systemctl restart mct-tts || true
 	for i in \$(seq 1 20); do
 		code=\$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3010/login || true)
 		[ \"\$code\" = 200 ] && { echo 'Приложение работает (страница входа отвечает 200).'; exit 0; }

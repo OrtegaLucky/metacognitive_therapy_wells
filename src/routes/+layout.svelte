@@ -11,6 +11,7 @@
 		['/beliefs', 'Убеждения'],
 		['/formulation', 'Схема'],
 		['/scales', 'GAD-7'],
+		['/avatar-test', 'Аватар'],
 		['/settings', 'Настройки']
 	];
 	const isActive = (href, path) => (href === '/' ? path === '/' : path.startsWith(href));

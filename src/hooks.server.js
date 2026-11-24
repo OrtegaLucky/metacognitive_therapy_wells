@@ -13,7 +13,9 @@ export async function handle({ event, resolve }) {
 
 	const response = await resolve(event);
 	response.headers.set('X-Content-Type-Options', 'nosniff');
-	response.headers.set('Referrer-Policy', 'no-referrer');
+	// same-origin, а не no-referrer: при no-referrer браузер шлёт формы с Origin: null,
+	// и SvelteKit отклоняет их как присланные с чужого сайта (403)
+	response.headers.set('Referrer-Policy', 'same-origin');
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 	// Личные страницы не кешируем ни в браузере, ни на прокси

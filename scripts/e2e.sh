@@ -57,6 +57,7 @@ ok "$(c -d "confirm=yes" "$B/stage?/force" | cut -d' ' -f1)" 303 "ручной �
 c $B/stage >/dev/null; has "(вручную)"
 echo "7. Заголовки"; curl -s -D - -o /dev/null $B/login | grep -i "access-control" && { echo "  ✗ лишний CORS-заголовок"; FAIL=1; }
 curl -s -D - -o /dev/null -H "Cookie: sid=$(cat $J)" $B/ | grep -iE '^(content-security-policy|x-frame-options|referrer-policy|cache-control):' | cut -c1-90
+curl -s -D - -o /dev/null $B/login | grep -qi "^referrer-policy: no-referrer" && { echo "  ✗ no-referrer ломает формы в браузере (Origin: null)"; FAIL=1; } || echo "  ✓ Referrer-Policy не ломает формы"
 echo "8. Шифрование файла базы"
 head -c 16 $DB_PATH | grep -q 'SQLite format' && { echo "  ✗ база НЕ зашифрована"; FAIL=1; } || echo "  ✓ файл базы не читается как обычная SQLite"
 ls -l $DB_PATH | cut -d' ' -f1

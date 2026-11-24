@@ -4,6 +4,8 @@ import adapter from '@sveltejs/adapter-node';
 export default {
 	kit: {
 		adapter: adapter(),
+		// Открытая вкладка замечает новую версию на сервере и при переходе загружает её
+		version: { pollInterval: 60_000 },
 		// Политика безопасности контента: грузим только своё (SPEC 13.1)
 		csp: {
 			mode: 'auto',

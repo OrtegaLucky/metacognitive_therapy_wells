@@ -23,7 +23,7 @@ cp -r build content migrations scripts tts package.json package-lock.json .deplo
 cp src/lib/server/password.js .deploy/src/lib/server/
 
 echo "== Выкладка на $HOST:$DEST ${DRY:+(пробный прогон)}"
-rsync -avz --delete $DRY \
+rsync -avz --delete --chown=root:root $DRY \
 	--exclude node_modules/ --exclude .installed-lock \
 	.deploy/ "$HOST:$DEST/"
 

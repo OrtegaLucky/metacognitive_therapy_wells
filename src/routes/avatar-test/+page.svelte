@@ -1,5 +1,6 @@
 <script>
 	import Avatar from '$lib/Avatar.svelte';
+	import { unlockAudio, ensureRunning, audioState } from '$lib/audio.js';
 
 	let { data } = $props();
 
@@ -10,6 +11,7 @@
 		'Хорошо. А что вас пугает в самом беспокойстве? Что, по-вашему, может случиться, если вы не остановитесь?',
 		'Понимаю.'
 	];
+	const STATE_LABEL = { running: 'включён', suspended: 'приостановлен', interrupted: 'прерван системой', closed: 'закрыт', нет: 'ещё не включался' };
 
 	let text = $state(PHRASES[0]);
 	let speaker = $state(data.health?.speakers?.includes('xenia') ? 'xenia' : (data.health?.speakers?.[0] ?? 'xenia'));
@@ -18,8 +20,10 @@
 	let stats = $state(null);
 	let error = $state('');
 	let history = $state([]);
+	let soundState = $state(audioState());
 
-	let ctx, analyser, source, raf;
+	let analyser, source, raf;
+	const onState = (s) => (soundState = s);
 
 	function stop() {
 		try {
@@ -45,9 +49,8 @@
 	async function speak() {
 		stop();
 		error = '';
-		// Звук в браузере можно включить только по нажатию пользователя — создаём здесь
-		ctx ??= new AudioContext();
-		ctx.resume();
+		// Звук включаем прямо по нажатию, до любых ожиданий — иначе iPhone его не даст
+		const { resumed } = unlockAudio(onState);
 		mode = 'thinking';
 		const t0 = performance.now();
 		try {
@@ -64,6 +67,12 @@
 			const synthMs = Number(res.headers.get('x-synth-ms')) || 0;
 			const bytes = await res.arrayBuffer();
 			const kb = Math.round(bytes.byteLength / 1024);
+			const ctx = await ensureRunning(resumed, onState);
+			if (!ctx) {
+				error = `Телефон не дал включить звук (состояние: ${STATE_LABEL[soundState] ?? soundState}). Нажмите «Сказать» ещё раз.`;
+				mode = 'idle';
+				return;
+			}
 			const audio = await ctx.decodeAudioData(bytes);
 			analyser = ctx.createAnalyser();
 			analyser.fftSize = 1024;
@@ -120,6 +129,7 @@
 		{#if mode === 'speaking'}<button type="button" class="secondary" onclick={stop}>Стоп</button>{/if}
 	</div>
 	{#if error}<p class="error">{error}</p>{/if}
+	<p class="muted small">Звук в браузере: {STATE_LABEL[soundState] ?? soundState}</p>
 </div>
 
 {#if stats}

@@ -1,0 +1,10 @@
+[Unit]
+Description=MCT: копия базы каждый день в 04:00 по Москве
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Europe/Moscow
+Persistent=true
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

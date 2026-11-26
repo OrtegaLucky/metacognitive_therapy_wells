@@ -1,0 +1,22 @@
+# Ежедневная копия базы (SPEC 12.1). Запускается таймером mct-backup.timer.
+# Установка: cp deploy/mct-backup.{service,timer} /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now mct-backup.timer
+[Unit]
+Description=MCT: копия базы
+
+[Service]
+Type=oneshot
+User=mct
+Group=mct
+WorkingDirectory=/opt/mct/app
+EnvironmentFile=/opt/mct/.env
+Environment=BACKUP_DIR=/opt/mct/backups
+Environment=BACKUP_KEEP=14
+ExecStart=/usr/bin/node scripts/backup-db.js
+Nice=10
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/mct/data /opt/mct/backups
+UMask=0077

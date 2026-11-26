@@ -1,5 +1,5 @@
 <script>
-	import { JOURNAL_KINDS, fmtDate } from '$lib/labels.js';
+	import { JOURNAL_KINDS, EXERCISES, fmtDate } from '$lib/labels.js';
 
 	let { data, form } = $props();
 	let kind = $state(data.newKind);
@@ -15,6 +15,7 @@
 			parts.push(p.wanted_to_worry ? 'захотелось беспокоиться' : 'желания не было');
 			if (p.minutes_used != null) parts.push(`${p.minutes_used} мин`);
 		}
+		if (e.kind === 'att' && p.exercise) parts.push(EXERCISES[p.exercise]?.label ?? p.exercise);
 		if (e.kind === 'att' && p.minutes != null) parts.push(`${p.minutes} мин`);
 		return parts.join(', ');
 	}

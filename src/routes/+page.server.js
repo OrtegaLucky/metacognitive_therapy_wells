@@ -3,7 +3,7 @@ import { getDb } from '$lib/server/db.js';
 import { getStage } from '$lib/server/content.js';
 import { getProfile, checkUnlock } from '$lib/server/stages.js';
 
-export function load() {
+export function load({ url }) {
 	const db = getDb();
 	const profile = getProfile();
 	const stage = getStage(profile.current_stage);
@@ -15,6 +15,7 @@ export function load() {
 		profile,
 		stage,
 		unlock: checkUnlock(profile.current_stage),
+		logged: url.searchParams.has('logged'),
 		today: Object.fromEntries(today.map((r) => [r.kind, r.c]))
 	};
 }

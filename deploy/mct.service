@@ -10,6 +10,8 @@ User=mct
 Group=mct
 WorkingDirectory=/opt/mct/app
 EnvironmentFile=/opt/mct/.env
+# Голосовые записи до 15 МБ (по умолчанию adapter-node пускает только 512 КБ)
+Environment=BODY_SIZE_LIMIT=16M
 ExecStart=/usr/bin/node build
 Restart=on-failure
 RestartSec=5

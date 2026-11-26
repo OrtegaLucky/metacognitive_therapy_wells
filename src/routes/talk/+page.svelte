@@ -47,6 +47,7 @@
 		if (m && data.models.some((x) => x.id === m && x.available)) model = m;
 		voiceOn = store.get('voice') === '1';
 		voice = store.get('speaker') ?? 'xenia';
+		autoSend = store.get('autosend') !== '0';
 		scrollDown();
 	});
 
@@ -55,11 +56,90 @@
 		chatEl?.scrollTo({ top: chatEl.scrollHeight, behavior: 'smooth' });
 	}
 
-	async function send(msg) {
+	// ---- Голосовой ввод: запись по нажатию, распознавание на своём сервере (SPEC 12.3)
+	let recording = $state(false);
+	let recSec = $state(0);
+	let sttBusy = $state(false);
+	let autoSend = $state(true);
+	let rec, recStream, recTimer;
+	const MAX_REC_SEC = 120;
+
+	function pickMime() {
+		for (const t of ['audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/webm'])
+			if (window.MediaRecorder?.isTypeSupported?.(t)) return t;
+		return '';
+	}
+
+	async function startRec() {
+		error = '';
+		stopVoice();
+		if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+			error = 'Этот браузер не умеет записывать звук. Напишите ответ текстом.';
+			return;
+		}
+		try {
+			recStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+		} catch (e) {
+			error = e?.name === 'NotAllowedError' ? 'Нет доступа к микрофону: разрешите его в настройках браузера для этого сайта.' : 'Микрофон не включился: ' + (e?.message ?? e);
+			return;
+		}
+		const mime = pickMime();
+		const parts = [];
+		rec = new MediaRecorder(recStream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined);
+		rec.ondataavailable = (ev) => ev.data.size && parts.push(ev.data);
+		rec.onstop = () => recognize(new Blob(parts, { type: rec.mimeType || mime || 'audio/webm' }));
+		rec.start();
+		recording = true;
+		recSec = 0;
+		recTimer = setInterval(() => {
+			recSec += 1;
+			if (recSec >= MAX_REC_SEC) stopRec();
+		}, 1000);
+	}
+
+	let pendingAudio = null;
+	function stopRec() {
+		if (!recording) return;
+		clearInterval(recTimer);
+		recording = false;
+		recStream?.getTracks().forEach((t) => t.stop()); // микрофон выключается сразу
+		// Нажатие «Готово» — жест пользователя: тут же будим звук для озвучки ответа (iPhone)
+		pendingAudio = voiceOn ? unlockAudio() : null;
+		rec?.stop();
+	}
+
+	async function recognize(blob) {
+		sttBusy = true;
+		try {
+			const res = await fetch('/api/stt', { method: 'POST', headers: { 'content-type': blob.type.split(';')[0] }, body: blob });
+			const out = await res.json().catch(() => ({}));
+			if (!res.ok) throw new Error(out.error ?? `ошибка ${res.status}`);
+			const said = (out.text ?? '').trim();
+			if (!said) {
+				error = 'Не расслышал. Попробуйте ещё раз, чуть ближе к микрофону.';
+				return;
+			}
+			if (autoSend) {
+				sttBusy = false;
+				await send(said, pendingAudio);
+			} else {
+				text = text.trim() ? text.trim() + ' ' + said : said;
+			}
+		} catch (e) {
+			error = 'Не получилось распознать речь: ' + (e?.message ?? e);
+		} finally {
+			sttBusy = false;
+			pendingAudio = null;
+		}
+	}
+
+	const mmss = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+	async function send(msg, unlocked = null) {
 		if (busy) return;
 		error = '';
 		// Звук включаем прямо по нажатию, до любых ожиданий — иначе iPhone его не даст
-		const audio = voiceOn ? unlockAudio() : null;
+		const audio = unlocked ?? (voiceOn ? unlockAudio() : null);
 		busy = true;
 		pending = msg || null;
 		mode = 'thinking';
@@ -201,10 +281,22 @@
 	{/if}
 {:else}
 	<div class="card">
-		<label for="text" class="small muted">Ваш ответ (Ctrl+Enter — отправить)</label>
-		<textarea id="text" bind:value={text} onkeydown={onKey} maxlength="4000" disabled={busy}></textarea>
+		{#if recording}
+			<button type="button" class="big rec" onclick={stopRec}>■ Готово · {mmss(recSec)}</button>
+			<p class="small muted" style="text-align: center">Говорите. Нажмите «Готово», когда закончите.</p>
+		{:else}
+			<button type="button" class="big" disabled={busy || sttBusy} onclick={startRec}>
+				{sttBusy ? 'Распознаю…' : '🎤 Сказать голосом'}
+			</button>
+			<label class="inline small" style="display: flex; gap: 6px; margin-top: 6px">
+				<input type="checkbox" bind:checked={autoSend} onchange={() => store.set('autosend', autoSend ? '1' : '0')} />
+				Отправлять сказанное сразу (иначе — в поле ниже, чтобы поправить)
+			</label>
+		{/if}
+		<label for="text" class="small muted">Или напишите (Ctrl+Enter — отправить)</label>
+		<textarea id="text" bind:value={text} onkeydown={onKey} maxlength="4000" disabled={busy || recording}></textarea>
 		<div class="row" style="margin-top: 8px">
-			<button type="button" style="flex: 1" disabled={busy || !text.trim()} onclick={() => send(text.trim())}>Отправить</button>
+			<button type="button" style="flex: 1" disabled={busy || recording || !text.trim()} onclick={() => send(text.trim())}>Отправить</button>
 			{#if userTurns >= 3 && !draft}
 				<button type="button" class="secondary" disabled={busy} onclick={() => send(FINISH_TEXT)}>Подвести итог</button>
 			{/if}
@@ -304,6 +396,10 @@
 		max-width: 220px;
 		margin: 0 auto;
 		text-align: center;
+	}
+	.rec {
+		background: var(--danger);
+		color: #fff;
 	}
 	.belief {
 		border-top: 1px solid var(--line);

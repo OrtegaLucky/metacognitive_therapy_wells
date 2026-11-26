@@ -17,7 +17,7 @@ export async function handle({ event, resolve }) {
 	// и SvelteKit отклоняет их как присланные с чужого сайта (403)
 	response.headers.set('Referrer-Policy', 'same-origin');
 	response.headers.set('X-Frame-Options', 'DENY');
-	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
 	// Личные страницы не кешируем ни в браузере, ни на прокси
 	response.headers.set('Cache-Control', 'no-store');
 	return response;

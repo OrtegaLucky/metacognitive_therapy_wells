@@ -2,14 +2,15 @@
 // OpenAI — напрямую. Gemini — через пересылку на mvps (Google не пускает main по стране).
 import { env } from '$env/dynamic/private';
 
+// Выбраны по сравнению на тестовом разговоре 2026-11-26 (скорость, качество, цена — см. SPEC 12.2)
 export const MODELS = [
-	{ id: 'gpt-5-mini', provider: 'openai', label: 'GPT-5 mini', opts: { reasoning_effort: 'minimal' } },
-	{ id: 'gpt-5', provider: 'openai', label: 'GPT-5', opts: { reasoning_effort: 'low' } },
-	{ id: 'gpt-4.1', provider: 'openai', label: 'GPT-4.1', opts: { temperature: 0.6 } },
-	{ id: 'gemini-2.5-flash', provider: 'gemini', label: 'Gemini 2.5 Flash', thinking: 0 },
-	{ id: 'gemini-2.5-pro', provider: 'gemini', label: 'Gemini 2.5 Pro' }
+	{ id: 'gemini-3.6-flash', provider: 'gemini', label: 'Gemini 3.6 Flash', thinking: 'low' },
+	{ id: 'gemini-3.8-flash', provider: 'gemini', label: 'Gemini 3.8 Flash', thinking: 'low' },
+	{ id: 'gpt-6-luna', provider: 'openai', label: 'GPT-6 Luna', opts: { reasoning_effort: 'low' } },
+	{ id: 'gpt-5.6-luna', provider: 'openai', label: 'GPT-5.6 Luna', opts: { reasoning_effort: 'low' } },
+	{ id: 'gpt-6.1-terra', provider: 'openai', label: 'GPT-6.1 Terra', opts: { reasoning_effort: 'low' } }
 ];
-export const DEFAULT_MODEL = 'gpt-5-mini';
+export const DEFAULT_MODEL = 'gemini-3.6-flash';
 
 const hasKey = (provider) =>
 	provider === 'openai'
@@ -96,7 +97,7 @@ async function openai(m, system, messages) {
 async function gemini(m, system, messages) {
 	const base = env.GEMINI_RELAY_URL.replace(/\/+$/, '');
 	const generationConfig = { responseMimeType: 'application/json' };
-	if (m.thinking !== undefined) generationConfig.thinkingConfig = { thinkingBudget: m.thinking };
+	if (m.thinking) generationConfig.thinkingConfig = { thinkingLevel: m.thinking };
 	const d = await post(
 		`${base}/v1beta/models/${m.id}:generateContent`,
 		{ 'x-goog-api-key': env.GEMINI_API_KEY, 'X-Relay-Key': env.GEMINI_RELAY_SECRET },

@@ -48,3 +48,12 @@ export async function ensureRunning(resumed, onState) {
 	onState?.(ctx.state);
 	return ctx.state === 'running' ? ctx : null;
 }
+
+/** Перед записью с микрофона: в режиме «playback» iPhone запись не даёт. После записи unlockAudio вернёт «playback». */
+export function micSession() {
+	try {
+		if (navigator.audioSession) navigator.audioSession.type = 'play-and-record';
+	} catch {
+		/* старый Safari — без этой настройки */
+	}
+}

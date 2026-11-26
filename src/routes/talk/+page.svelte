@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { invalidateAll } from '$app/navigation';
 	import Avatar from '$lib/Avatar.svelte';
-	import { unlockAudio, ensureRunning } from '$lib/audio.js';
+	import { unlockAudio, ensureRunning, micSession } from '$lib/audio.js';
 	import { BELIEF_TYPES, COPING } from '$lib/labels.js';
 
 	let { data, form } = $props();
@@ -60,6 +60,8 @@
 	let recording = $state(false);
 	let recSec = $state(0);
 	let sttBusy = $state(false);
+	let micStarting = $state(false);
+	let recError = $state('');
 	let autoSend = $state(true);
 	let rec, recStream, recTimer;
 	const MAX_REC_SEC = 120;
@@ -72,23 +74,40 @@
 
 	async function startRec() {
 		error = '';
+		recError = '';
 		stopVoice();
 		if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-			error = 'Этот браузер не умеет записывать звук. Напишите ответ текстом.';
+			recError = 'Этот браузер не умеет записывать звук. Напишите ответ текстом.';
 			return;
 		}
+		micStarting = true;
 		try {
-			recStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+			micSession();
+			const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('микрофон не ответил за 15 секунд')), 15000));
+			recStream = await Promise.race([
+				navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } }),
+				timeout
+			]);
+			const mime = pickMime();
+			const parts = [];
+			try {
+				rec = new MediaRecorder(recStream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined);
+			} catch {
+				rec = new MediaRecorder(recStream); // формат по выбору браузера
+			}
+			rec.ondataavailable = (ev) => ev.data.size && parts.push(ev.data);
+			rec.onstop = () => recognize(new Blob(parts, { type: rec.mimeType || mime || 'audio/mp4' }));
+			rec.start(1000);
 		} catch (e) {
-			error = e?.name === 'NotAllowedError' ? 'Нет доступа к микрофону: разрешите его в настройках браузера для этого сайта.' : 'Микрофон не включился: ' + (e?.message ?? e);
+			recStream?.getTracks().forEach((t) => t.stop());
+			recError =
+				e?.name === 'NotAllowedError'
+					? 'Нет доступа к микрофону. iPhone: Настройки → Safari → Микрофон → «Спросить» или «Разрешить», затем обновите страницу.'
+					: 'Микрофон не включился: ' + (e?.message || e?.name || e);
 			return;
+		} finally {
+			micStarting = false;
 		}
-		const mime = pickMime();
-		const parts = [];
-		rec = new MediaRecorder(recStream, mime ? { mimeType: mime, audioBitsPerSecond: 32000 } : undefined);
-		rec.ondataavailable = (ev) => ev.data.size && parts.push(ev.data);
-		rec.onstop = () => recognize(new Blob(parts, { type: rec.mimeType || mime || 'audio/webm' }));
-		rec.start();
 		recording = true;
 		recSec = 0;
 		recTimer = setInterval(() => {
@@ -116,7 +135,7 @@
 			if (!res.ok) throw new Error(out.error ?? `ошибка ${res.status}`);
 			const said = (out.text ?? '').trim();
 			if (!said) {
-				error = 'Не расслышал. Попробуйте ещё раз, чуть ближе к микрофону.';
+				recError = 'Не расслышал. Попробуйте ещё раз, чуть ближе к микрофону.';
 				return;
 			}
 			if (autoSend) {
@@ -126,7 +145,7 @@
 				text = text.trim() ? text.trim() + ' ' + said : said;
 			}
 		} catch (e) {
-			error = 'Не получилось распознать речь: ' + (e?.message ?? e);
+			recError = 'Не получилось распознать речь: ' + (e?.message ?? e);
 		} finally {
 			sttBusy = false;
 			pendingAudio = null;
@@ -285,9 +304,10 @@
 			<button type="button" class="big rec" onclick={stopRec}>■ Готово · {mmss(recSec)}</button>
 			<p class="small muted" style="text-align: center">Говорите. Нажмите «Готово», когда закончите.</p>
 		{:else}
-			<button type="button" class="big" disabled={busy || sttBusy} onclick={startRec}>
-				{sttBusy ? 'Распознаю…' : '🎤 Сказать голосом'}
+			<button type="button" class="big" disabled={busy || sttBusy || micStarting} onclick={startRec}>
+				{micStarting ? 'Включаю микрофон…' : sttBusy ? 'Распознаю…' : '🎤 Сказать голосом'}
 			</button>
+			{#if recError}<p class="error small">{recError}</p>{/if}
 			<label class="inline small" style="display: flex; gap: 6px; margin-top: 6px">
 				<input type="checkbox" bind:checked={autoSend} onchange={() => store.set('autosend', autoSend ? '1' : '0')} />
 				Отправлять сказанное сразу (иначе — в поле ниже, чтобы поправить)

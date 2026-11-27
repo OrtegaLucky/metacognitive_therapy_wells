@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { onMount, tick } from 'svelte';
 	import { fmtDate } from '$lib/labels.js';
+	import { createVoice, readSpeaker, chunks } from '$lib/speak.js';
+	import { startRecording, transcribe } from '$lib/recorder.js';
 
 	let { data, form } = $props();
 
@@ -9,6 +11,87 @@
 	let text = $state('');
 	let pending = $state(null); // текст, который сейчас отправляется
 	let busy = $state(false);
+
+	// Озвучка ответов модели (тот же выбор, что в «Разговоре»)
+	const voice = createVoice();
+	let voiceOn = $state(false);
+	let speaking = $state(false);
+	let voiceError = $state('');
+
+	function setVoiceOn() {
+		try {
+			localStorage.setItem('talk.voice', voiceOn ? '1' : '0');
+		} catch {
+			/* без запоминания */
+		}
+		if (!voiceOn) stopVoice();
+	}
+
+	async function speak(said) {
+		voiceError = '';
+		speaking = true;
+		try {
+			const parts = chunks(said);
+			const speaker = readSpeaker();
+			parts.forEach((p) => voice.preload(p, speaker));
+			for (const p of parts) await voice.say(p, speaker);
+		} catch (e) {
+			voiceError = 'Озвучка не получилась: ' + e.message;
+		} finally {
+			speaking = false;
+		}
+	}
+
+	function replay(said) {
+		voice.stop();
+		voice.unlock(); // прямо в нажатии — иначе iPhone не даст звук
+		speak(said);
+	}
+
+	function stopVoice() {
+		voice.stop();
+		speaking = false;
+	}
+
+	// Микрофон: запись → распознавание → текст дописывается в поле ответа
+	let rec = null;
+	let micMode = $state('idle'); // idle | starting | rec | busy
+	let micSec = $state(0);
+	let micError = $state('');
+	let micTimer;
+
+	async function toggleMic() {
+		micError = '';
+		if (micMode === 'rec') return stopMic();
+		if (micMode !== 'idle') return;
+		stopVoice();
+		micMode = 'starting';
+		try {
+			rec = await startRecording();
+		} catch (e) {
+			micError = 'Не записалось: ' + e.message;
+			micMode = 'idle';
+			return;
+		}
+		micMode = 'rec';
+		micSec = 0;
+		micTimer = setInterval(() => ++micSec >= 180 && stopMic(), 1000);
+	}
+
+	async function stopMic() {
+		clearInterval(micTimer);
+		micMode = 'busy';
+		try {
+			const said = await transcribe(await rec.stop());
+			if (!said) micError = 'Не расслышал — попробуйте ещё раз.';
+			else text = text.trim() ? text.replace(/\s*$/, ' ') + said : said;
+		} catch (e) {
+			micError = 'Не получилось распознать: ' + e.message;
+		} finally {
+			rec = null;
+			micMode = 'idle';
+		}
+	}
 
 	const messages = $derived(data.review?.messages ?? []);
 	const userTurns = $derived(messages.filter((m) => m.role === 'user').length);
@@ -20,9 +103,15 @@
 		try {
 			const m = localStorage.getItem('talk.model');
 			if (m && data.models.some((x) => x.id === m && x.available)) model = m;
+			voiceOn = localStorage.getItem('talk.voice') === '1';
 		} catch {
 			/* без запоминания */
 		}
+		return () => {
+			voice.stop();
+			clearInterval(micTimer);
+			rec?.stop();
+		};
 	});
 
 	async function scrollDown() {
@@ -34,12 +123,16 @@
 		busy = true;
 		pending = formData.get('finish') ? data.finishText : String(formData.get('text') ?? '') || null;
 		text = '';
+		stopVoice();
+		if (voiceOn) voice.unlock(); // прямо в нажатии — иначе iPhone не даст звук
 		scrollDown();
-		return async ({ update }) => {
+		return async ({ update, result }) => {
 			await update({ reset: false });
 			busy = false;
 			pending = null;
 			scrollDown();
+			const last = data.review?.messages?.at(-1);
+			if (voiceOn && result.type === 'success' && last?.role === 'assistant') speak(last.content);
 		};
 	};
 </script>
@@ -83,7 +176,12 @@
 						{#each m.ratings as r}<div>«{r.text}» — <b>{r.percent}%</b></div>{/each}
 					</div>
 				{/if}
-				{#if m.role === 'assistant' && m.modelLabel}<div class="meta">{m.modelLabel} · {(m.ms / 1000).toFixed(1).replace('.', ',')} с</div>{/if}
+				{#if m.role === 'assistant' && m.modelLabel}
+					<div class="meta">
+						{m.modelLabel} · {(m.ms / 1000).toFixed(1).replace('.', ',')} с ·
+						<button type="button" class="link small" onclick={() => replay(m.content)}>▶ прослушать</button>
+					</div>
+				{/if}
 			</div>
 		{/each}
 		{#if pending}<div class="msg user"><div style="white-space: pre-wrap">{pending}</div></div>{/if}
@@ -129,7 +227,11 @@
 	<form method="POST" action="?/say" use:enhance={sending} class="card">
 		<input type="hidden" name="model" value={model} />
 		<input type="hidden" name="kind" value={data.kind} />
-		<textarea name="text" bind:value={text} placeholder="Ваш ответ (можно голосом — кнопка в углу поля)" disabled={busy}></textarea>
+		<button type="button" class="big mic" class:on={micMode === 'rec'} onclick={toggleMic} disabled={busy || micMode === 'starting' || micMode === 'busy'}>
+			{micMode === 'rec' ? `■ Готово (${micSec} с)` : micMode === 'starting' ? 'Включаю микрофон…' : micMode === 'busy' ? 'Распознаю…' : '🎤 Сказать голосом'}
+		</button>
+		{#if micError}<p class="error small">{micError}</p>{/if}
+		<textarea name="text" data-novoice="1" bind:value={text} placeholder="Ваш ответ — голосом (кнопка выше) или текстом. Перед отправкой можно поправить." disabled={busy}></textarea>
 		<div class="row" style="margin-top: 8px">
 			<button type="submit" disabled={busy || !text.trim()}>Ответить</button>
 			{#if userTurns >= (isStage ? 3 : 2)}
@@ -146,6 +248,12 @@
 		<button type="submit" class="link small">Начать заново</button>
 	</form>
 {/if}
+
+<p class="small row" style="align-items: center">
+	<label style="margin: 0"><input type="checkbox" bind:checked={voiceOn} onchange={setVoiceOn} style="width: auto" /> 🔊 Озвучивать ответы</label>
+	{#if speaking}<button type="button" class="secondary" onclick={stopVoice}>Стоп</button>{/if}
+</p>
+{#if voiceError}<p class="error small">{voiceError}</p>{/if}
 
 <p class="small">
 	Модель:
@@ -202,6 +310,15 @@
 	.msg.user {
 		align-self: flex-end;
 		background: var(--accent-text);
+	}
+	.mic {
+		width: 100%;
+		margin-bottom: 8px;
+	}
+	.mic.on {
+		background: #c0392b;
+		border-color: #c0392b;
+		color: #fff;
 	}
 	.rated {
 		margin-top: 8px;

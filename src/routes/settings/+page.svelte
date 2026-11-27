@@ -14,7 +14,7 @@
 	<input id="a" name="reminder_att" type="time" value={data.profile.reminder_att ?? ''} />
 
 	<label for="r">Еженедельный обзор</label>
-	<input id="r" name="reminder_weekly_review" type="text" placeholder="Например: вс 19:00" value={data.profile.reminder_weekly_review ?? ''} />
+	<input id="r" name="reminder_weekly_review" type="text" placeholder="По умолчанию: вс 19:00 («-» — не напоминать)" value={data.profile.reminder_weekly_review ?? ''} />
 
 	<label for="c">Telegram chat id</label>
 	<input id="c" name="telegram_chat_id" type="text" inputmode="numeric" value={data.profile.telegram_chat_id ?? ''} />

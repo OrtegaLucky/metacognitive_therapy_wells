@@ -23,6 +23,7 @@ db.pragma("cipher='sqlcipher'");
 db.pragma('legacy=4');
 db.pragma(`key='${key}'`);
 const p = db.prepare('SELECT current_stage, reminder_worry_window, reminder_att, reminder_weekly_review, telegram_chat_id FROM profile WHERE id = 1').get();
+const lastReview = db.prepare("SELECT max(saved_at) AS t FROM stage_reviews WHERE saved_at IS NOT NULL").get()?.t;
 db.close();
 
 const msk = new Date(Date.now() + 3 * 3600_000); // Москва: UTC+3 без перехода на летнее время
@@ -42,10 +43,13 @@ const due = [];
 if (p.current_stage >= 2) {
 	due.push(['worry_window', toMin(p.reminder_worry_window)]);
 	due.push(['att', toMin(p.reminder_att)]);
-	// Еженедельный обзор: «вс 19:00» — только в свой день недели
-	const w = /^(пн|вт|ср|чт|пт|сб|вс)\s+(\d\d:\d\d)$/i.exec((p.reminder_weekly_review ?? '').trim());
+	// Еженедельный разбор: «вс 19:00» (так и по умолчанию) — только в свой день недели; «-» — не напоминать.
+	// На этапах 2–10 это промежуточный разбор, на 11-м — недельная проверка. Если разбор сохраняли за 3 дня — не зовём.
+	const setting = (p.reminder_weekly_review ?? '').trim() || 'вс 19:00';
+	const w = /^(пн|вт|ср|чт|пт|сб|вс)\s+(\d\d:\d\d)$/i.exec(setting);
 	const DAYS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
-	if (w && DAYS[msk.getUTCDay()] === w[1].toLowerCase()) due.push(['weekly', toMin(w[2])]);
+	const recent = lastReview && Date.now() - new Date(lastReview).getTime() < 3 * 86400_000;
+	if (w && !recent && DAYS[msk.getUTCDay()] === w[1].toLowerCase()) due.push([p.current_stage >= 11 ? 'weekly' : 'interim', toMin(w[2])]);
 }
 
 let failed = false;

@@ -28,6 +28,8 @@ export async function sendTelegram(token, chatId, text) {
 export function reminderText(kind, origin) {
 	if (kind === 'worry_window') return `Время вечернего окна. Хочется ли ещё беспокоиться о том, что вы отложили днём?\n${origin}/window`;
 	if (kind === 'att') return `Пара минут на упражнение: понаблюдать за мыслями со стороны.\n${origin}/exercises`;
+	if (kind === 'interim')
+		return `Пора на промежуточный разбор: 3–5 вопросов о том, как прошла неделя, и переоценка убеждений.\n${origin}/review?kind=interim`;
 	if (kind === 'weekly') return `Время еженедельной проверки: GAD-7, переоценка убеждений и разбор с моделью.\n${origin}/review`;
 	return `Напоминание\n${origin}/`;
 }

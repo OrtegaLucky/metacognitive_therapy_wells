@@ -91,3 +91,23 @@ export function readSpeaker() {
 		return 'xenia';
 	}
 }
+
+/** Делит текст на куски до n знаков по границам предложений — для озвучки длинных ответов. */
+export function chunks(text, n = 900) {
+	const out = [];
+	let cur = '';
+	for (const s of (text ?? '').replace(/\s+/g, ' ').trim().split(/(?<=[.!?…])\s+/)) {
+		if (!s) continue;
+		if (cur && (cur + ' ' + s).length > n) {
+			out.push(cur);
+			cur = '';
+		}
+		cur = cur ? cur + ' ' + s : s;
+		while (cur.length > n) {
+			out.push(cur.slice(0, n));
+			cur = cur.slice(n);
+		}
+	}
+	if (cur) out.push(cur);
+	return out;
+}

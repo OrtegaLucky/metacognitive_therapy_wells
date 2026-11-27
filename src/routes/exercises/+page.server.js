@@ -9,7 +9,7 @@ export function load() {
 	const today = getDb()
 		.prepare("SELECT count(*) AS c FROM journal_entries WHERE kind = 'att' AND created_at >= ?")
 		.get(dayStart).c;
-	return { today };
+	return { today, stage: getProfile().current_stage };
 }
 
 export const actions = {

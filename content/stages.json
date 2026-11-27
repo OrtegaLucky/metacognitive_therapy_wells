@@ -10,12 +10,16 @@
 				"Выписать хотя бы по одному убеждению каждого типа и оценить, насколько верите в каждое (0–100%).",
 				"Пройти шкалу GAD-7."
 			],
-			"journal_kinds_enabled": ["free"],
+			"journal_kinds_enabled": [
+				"free"
+			],
 			"experiments_enabled": [],
 			"unlock_rule": {
 				"requires_formulation": true,
 				"min_beliefs_per_type": 1,
-				"min_scales": { "gad7": 1 }
+				"min_scales": {
+					"gad7": 1
+				}
 			}
 		},
 		{
@@ -28,21 +32,183 @@
 				"Отмечать эпизоды беспокойства о беспокойстве.",
 				"Каждый день пару минут потренировать отстранённое наблюдение за мыслями — экран «Упражнения»."
 			],
-			"journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
 			"experiments_enabled": [],
 			"unlock_rule": {
 				"min_days": 7,
-				"min_entries": { "trigger": 10 }
+				"min_entries": {
+					"trigger": 10
+				}
 			}
 		},
-		{ "number": 3, "title": "Неконтролируемость, часть 1", "goal": "Проверить на опыте, правда ли беспокойство нельзя остановить.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": ["amplify_release"] },
-		{ "number": 4, "title": "Неконтролируемость, часть 2", "goal": "Отказаться от подавления мыслей и закрепить новый опыт.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": ["amplify_release"] },
-		{ "number": 5, "title": "Опасность, часть 1", "goal": "Разобрать убеждения о вреде беспокойства.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": ["lose_control"] },
-		{ "number": 6, "title": "Опасность, часть 2", "goal": "Отказаться от поиска успокоения.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": ["stop_reassurance"] },
-		{ "number": 7, "title": "Польза, часть 1", "goal": "Проверить, действительно ли беспокойство помогает.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": ["day_with_without"] },
-		{ "number": 8, "title": "Польза, часть 2", "goal": "Отказаться от беспокойства как инструмента.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": ["day_with_without"] },
-		{ "number": 9, "title": "Закрепление", "goal": "Написать свой план действий на случай триггера.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": [] },
-		{ "number": 10, "title": "Профилактика рецидива", "goal": "Подвести итог: старый способ и новый способ.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": [] },
-		{ "number": 11, "title": "Поддержка", "goal": "Раз в неделю проверять себя и помнить о плане.", "tasks": [], "journal_kinds_enabled": ["trigger", "worry_window", "type2", "att", "free"], "experiments_enabled": [] }
+		{
+			"number": 3,
+			"title": "Неконтролируемость, часть 1",
+			"goal": "Проверить на опыте, правда ли беспокойство нельзя остановить.",
+			"tasks": [
+				"Прочитать описание этапа и ответить себе на вопросы о неконтролируемости.",
+				"Провести эксперимент «Усилить и отпустить» (экран «Эксперименты», кнопка «Пройти с таймером») — не меньше двух раз в разные дни.",
+				"После каждого эксперимента написать свой вывод и переоценить убеждение.",
+				"Продолжать откладывать беспокойство до вечернего окна."
+			],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": [
+				"amplify_release"
+			],
+			"unlock_rule": {
+				"min_days": 7,
+				"min_experiments": 2
+			}
+		},
+		{
+			"number": 4,
+			"title": "Неконтролируемость, часть 2",
+			"goal": "Отказаться от подавления мыслей и закрепить новый опыт.",
+			"tasks": [
+				"Сделать упражнение «Белый медведь» и сравнить: подавление и «не мешать».",
+				"Не гнать мысли-триггеры: заметить, отложить до окна, вернуться к делу.",
+				"Провести ещё хотя бы один эксперимент «Усилить и отпустить».",
+				"Переоценить убеждения о неконтролируемости."
+			],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": [
+				"amplify_release"
+			],
+			"unlock_rule": {
+				"min_days": 7,
+				"min_experiments": 1,
+				"min_entries": {
+					"att": 3
+				},
+				"belief_threshold": {
+					"type": "uncontrollability",
+					"max": 30
+				}
+			}
+		},
+		{
+			"number": 5,
+			"title": "Опасность, часть 1",
+			"goal": "Разобрать убеждения о вреде беспокойства.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": [
+				"lose_control"
+			]
+		},
+		{
+			"number": 6,
+			"title": "Опасность, часть 2",
+			"goal": "Отказаться от поиска успокоения.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": [
+				"stop_reassurance"
+			]
+		},
+		{
+			"number": 7,
+			"title": "Польза, часть 1",
+			"goal": "Проверить, действительно ли беспокойство помогает.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": [
+				"day_with_without"
+			]
+		},
+		{
+			"number": 8,
+			"title": "Польза, часть 2",
+			"goal": "Отказаться от беспокойства как инструмента.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": [
+				"day_with_without"
+			]
+		},
+		{
+			"number": 9,
+			"title": "Закрепление",
+			"goal": "Написать свой план действий на случай триггера.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": []
+		},
+		{
+			"number": 10,
+			"title": "Профилактика рецидива",
+			"goal": "Подвести итог: старый способ и новый способ.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": []
+		},
+		{
+			"number": 11,
+			"title": "Поддержка",
+			"goal": "Раз в неделю проверять себя и помнить о плане.",
+			"tasks": [],
+			"journal_kinds_enabled": [
+				"trigger",
+				"worry_window",
+				"type2",
+				"att",
+				"free"
+			],
+			"experiments_enabled": []
+		}
 	]
 }

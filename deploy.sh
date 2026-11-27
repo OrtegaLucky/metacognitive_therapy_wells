@@ -20,7 +20,7 @@ echo "== Подготовка файлов для выкладки"
 rm -rf .deploy
 mkdir -p .deploy/src/lib/server
 cp -r build content migrations scripts tts stt package.json package-lock.json .deploy/
-cp src/lib/server/password.js .deploy/src/lib/server/
+cp src/lib/server/password.js src/lib/server/telegram.js .deploy/src/lib/server/
 
 echo "== Выкладка на $HOST:$DEST ${DRY:+(пробный прогон)}"
 rsync -avz --delete --chown=root:root $DRY \

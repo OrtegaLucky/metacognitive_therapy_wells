@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import readline from 'node:readline';
 
-const ALLOWED = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'GEMINI_RELAY_URL', 'GEMINI_RELAY_SECRET'];
+const ALLOWED = ['OPENAI_API_KEY', 'GEMINI_API_KEY', 'GEMINI_RELAY_URL', 'GEMINI_RELAY_SECRET', 'TELEGRAM_BOT_TOKEN'];
 const [name, envFile] = process.argv.slice(2);
 
 if (!ALLOWED.includes(name) || !envFile) {

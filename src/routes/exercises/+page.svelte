@@ -25,6 +25,17 @@
 		'дверь лето камень ветер город свеча остров бумага луна мяч поле улица утро врач экзамен работа деньги здоровье ошибка'
 	).split(' ');
 	const END = 'Упражнение закончено. Можно возвращаться к своим делам.';
+	// «Белый медведь» (этап 4): минуту подавляем мысль, минуту не мешаем ей — и сравниваем
+	const BEAR1 =
+		'Минуту изо всех сил старайтесь не думать о белом медведе — или о своей тревожной мысли. Каждый раз, когда она всё же придёт, нажмите кнопку.';
+	const BEAR2 = 'Теперь минуту не мешайте: пусть мысль приходит и уходит, как хочет. Так же нажимайте кнопку, когда она появится.';
+	const times = (n) => `${n} ${n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'раза' : 'раз'}`;
+	let bearPart = $state(1);
+	let counts = $state([0, 0]);
+	const bearNote = $derived(
+		`Когда подавлял — мысль пришла ${times(counts[0])}, когда не мешал — ${times(counts[1])}.`
+	);
+	const available = $derived(Object.entries(EXERCISES).filter(([, ex]) => (ex.fromStage ?? 2) <= data.stage));
 
 	let exercise = $state('train');
 	let minutes = $state(2);
@@ -63,6 +74,11 @@
 	function start() {
 		voice.unlock(); // по нажатию — иначе iPhone не даст звук
 		const id = ++runId;
+		if (exercise === 'bear') {
+			minutes = 2;
+			bearPart = 1;
+			counts = [0, 0];
+		}
 		startedAt = Date.now();
 		nowMs = startedAt;
 		phase = 'running';
@@ -74,8 +90,19 @@
 		const speaker = readSpeaker();
 		const live = () => id === runId && phase === 'running';
 		const timeLeft = () => minutes * 60_000 - (Date.now() - startedAt);
-		await speak(INTRO[exercise]);
-		if (exercise === 'assoc') {
+		if (exercise === 'bear') {
+			await speak(BEAR1);
+			startedAt = Date.now(); // отсчёт — после инструкции
+			while (live() && timeLeft() > 60_000) await sleep(300);
+			if (!live()) return;
+			await voice.chime();
+			bearPart = 2;
+			await speak(BEAR2);
+			startedAt = Date.now() - 60_000;
+		} else await speak(INTRO[exercise]);
+		if (exercise === 'bear') {
+			/* вторая минута — просто ждём */
+		} else if (exercise === 'assoc') {
 			const words = shuffle(WORDS);
 			for (let i = 0; live() && timeLeft() > 4000; i++) {
 				const w = words[i % words.length];
@@ -124,18 +151,22 @@
 {:else if phase === 'setup'}
 	<p class="muted small">Пара минут в день. Сегодня упражнений: {data.today}.</p>
 	<div class="card">
-		{#each Object.entries(EXERCISES) as [id, ex]}
+		{#each available as [id, ex]}
 			<label class="inline option">
 				<input type="radio" name="ex" value={id} bind:group={exercise} />
 				<span><b>{ex.label}.</b> <span class="muted">{ex.hint}</span></span>
 			</label>
 		{/each}
-		<label for="len">Длительность</label>
-		<select id="len" bind:value={minutes} style="width: auto">
-			<option value={2}>2 минуты</option>
-			<option value={3}>3 минуты</option>
-			<option value={5}>5 минут</option>
-		</select>
+		{#if exercise !== 'bear'}
+			<label for="len">Длительность</label>
+			<select id="len" bind:value={minutes} style="width: auto">
+				<option value={2}>2 минуты</option>
+				<option value={3}>3 минуты</option>
+				<option value={5}>5 минут</option>
+			</select>
+		{:else}
+			<p class="small muted">Две минуты: минута подавления и минута «не мешать».</p>
+		{/if}
 		<label class="inline"><input type="checkbox" bind:checked={voiceOn} /> Озвучивать (голос из «Разговора»)</label>
 		<p><button type="button" class="big" onclick={start}>Начать</button></p>
 	</div>
@@ -145,6 +176,10 @@
 			<div class="track" aria-hidden="true"><div class="train"><i></i><i></i><i></i><i></i></div></div>
 		{/if}
 		<p class={exercise === 'assoc' && shown.split(' ').length === 1 ? 'word' : 'phrase'}>{shown}</p>
+		{#if phase === 'running' && exercise === 'bear'}
+			<p class="small muted">{bearPart === 1 ? 'Минута 1: не думать' : 'Минута 2: не мешать'}</p>
+			<button type="button" class="big" onclick={() => counts[bearPart - 1]++}>Мысль пришла · {counts[bearPart - 1]}</button>
+		{/if}
 		{#if phase === 'running'}
 			<p class="muted small">{mmss(left)}</p>
 			<button type="button" class="secondary" onclick={stopEarly}>Закончить</button>
@@ -156,7 +191,13 @@
 			<input type="hidden" name="exercise" value={exercise} />
 			<input type="hidden" name="minutes" value={usedMin} />
 			<label for="note">Что заметили (по желанию)</label>
-			<textarea id="note" name="note" placeholder="Например: несколько раз «садился в вагон», но получалось вернуться"></textarea>
+			{#if exercise === 'bear'}
+				<p>{bearNote}</p>
+				<p class="small muted">Обычно, когда мысль гонят, она возвращается чаще. Подавление не помогает — а если не мешать, мысль уходит сама.</p>
+				<textarea id="note" name="note">{bearNote}</textarea>
+			{:else}
+				<textarea id="note" name="note" placeholder="Например: несколько раз «садился в вагон», но получалось вернуться"></textarea>
+			{/if}
 			{#if form?.error}<p class="error">{form.error}</p>{/if}
 			<p><button type="submit" class="big">Сохранить ({usedMin} мин)</button></p>
 		</form>

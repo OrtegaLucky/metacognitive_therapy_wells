@@ -64,6 +64,13 @@ stop; start
 c $B/ >/dev/null; has "Отстранённая осознанность"
 ok "$(c -d "confirm=yes" "$B/stage?/force" | cut -d' ' -f1)" 303 "ручной переход 2 → 3"
 c $B/stage >/dev/null; has "(вручную)"
+echo "6а. Этап 3, настройки, напоминания"
+c $B/stage >/dev/null; has "Завершённых экспериментов: 0 из 2"
+c $B/ >/dev/null; has "Усилить и отпустить"
+ok "$(c -d "kind=amplify_release&belief_id=&prediction=не смогу остановиться&prediction_percent=70&belief_before_percent=" "$B/experiments?/create" | cut -d' ' -f1)" 200 "эксперимент этапа 3 создан"
+c $B/experiments >/dev/null; has "Пройти с таймером"
+ok "$(c -d "reminder_worry_window=18:00&reminder_att=12:00&reminder_weekly_review=&telegram_chat_id=123" "$B/settings?/save" | cut -d' ' -f1)" 200 "настройки сохранены"
+ok "$(c -d "" "$B/settings?/telegram" | cut -d' ' -f1)" 400 "без токена бота проверка честно отказывает"
 echo "7. Заголовки"; curl -s -D - -o /dev/null $B/login | grep -i "access-control" && { echo "  ✗ лишний CORS-заголовок"; FAIL=1; }
 curl -s -D - -o /dev/null -H "Cookie: sid=$(cat $J)" $B/ | grep -iE '^(content-security-policy|x-frame-options|referrer-policy|cache-control):' | cut -c1-90
 curl -s -D - -o /dev/null $B/login | grep -qi "^referrer-policy: no-referrer" && { echo "  ✗ no-referrer ломает формы в браузере (Origin: null)"; FAIL=1; } || echo "  ✓ Referrer-Policy не ломает формы"
@@ -76,6 +83,7 @@ ok "$(c $B/ | cut -d' ' -f1)" 303 "после выхода снова нужен
 echo "10. Подбор пароля"
 for i in $(seq 1 6); do r=$(curl -s -o /dev/null -w '%{http_code}' -H "Origin: $B" -H "Accept: text/html" -d password=x $B/login); done; ok "$r" 429 "6-я попытка за минуту заблокирована"
 stop
+r=$(TELEGRAM_BOT_TOKEN= node scripts/remind.js --dry-run 2>&1; echo "код $?"); echo "$r" | grep -q "код 0" && echo "  ✓ скрипт напоминаний открывает базу" || { echo "  ✗ скрипт напоминаний: $r"; FAIL=1; }
 echo "--- ошибки сервера:"; grep -iE 'error|warn' $T/server.log | head -10
 echo "ИТОГ: $([ $FAIL = 0 ] && echo 'всё прошло' || echo 'ЕСТЬ ОШИБКИ')"
 rm -rf $T

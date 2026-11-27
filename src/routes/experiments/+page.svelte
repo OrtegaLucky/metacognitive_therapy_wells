@@ -1,6 +1,7 @@
 <script>
 	import { enhance } from '$app/forms';
 	import { EXPERIMENT_KINDS } from '$lib/experiments.js';
+	import GuidedRun from '$lib/GuidedRun.svelte';
 	import { BELIEF_LABEL, fmtDate } from '$lib/labels.js';
 
 	let { data, form } = $props();
@@ -77,6 +78,7 @@
 		{#if e.belief_text}<p class="small"><b>Убеждение:</b> {e.belief_text}{e.belief_before_percent != null ? ` — верю на ${e.belief_before_percent}%` : ''}</p>{/if}
 		<p class="small"><b>Прогноз:</b> {e.prediction}{e.prediction_percent != null ? ` (уверен на ${e.prediction_percent}%)` : ''}</p>
 		<p class="small muted">{EXPERIMENT_KINDS[e.kind]?.how}</p>
+		{#if e.kind === 'amplify_release' || e.kind === 'lose_control'}<GuidedRun kind={e.kind} id={e.id} />{/if}
 
 		<form method="POST" use:enhance={withPending(e.id)}>
 			<input type="hidden" name="id" value={e.id} />

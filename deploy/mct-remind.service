@@ -1,0 +1,20 @@
+# Напоминания в Telegram (SPEC 8). Запускается таймером mct-remind.timer.
+# Установка: cp deploy/mct-remind.{service,timer} /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now mct-remind.timer
+[Unit]
+Description=MCT: напоминания в Telegram
+
+[Service]
+Type=oneshot
+User=mct
+Group=mct
+WorkingDirectory=/opt/mct/app
+EnvironmentFile=/opt/mct/.env
+ExecStart=/usr/bin/node scripts/remind.js
+Nice=10
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/mct/data
+UMask=0077

@@ -14,7 +14,7 @@ export function stageStartedAt(stage) {
 	return row?.started_at ?? getProfile().started_at;
 }
 
-const daysSince = (iso) => Math.floor((Date.now() - Date.parse(iso)) / 86400_000);
+export const daysSince = (iso) => Math.floor((Date.now() - Date.parse(iso)) / 86400_000);
 
 /** Средняя последняя оценка активных убеждений типа (или null, если оценок нет). */
 export function avgBelief(type) {
@@ -29,9 +29,11 @@ export function avgBelief(type) {
 	return Math.round(rows.reduce((s, r) => s + r.p, 0) / rows.length);
 }
 
+const filled = (...v) => v.every((x) => typeof x === 'string' && x.trim());
+
 /**
  * Проверяет unlock_rule этапа.
- * Возвращает { hasRule, ok, items: [{ label, done }] }.
+ * Возвращает { hasRule, ok, items: [{ label, done, link? }] }.
  */
 export function checkUnlock(stageNumber) {
 	const rule = getStage(stageNumber)?.unlock_rule;
@@ -44,21 +46,21 @@ export function checkUnlock(stageNumber) {
 	if (rule.requires_formulation) {
 		const f = db.prepare('SELECT * FROM formulation WHERE id = 1').get();
 		const done = [f.trigger_examples, f.worry_chain, f.type2_worry].every((v) => v && v.trim());
-		items.push({ label: 'Концептуализация заполнена: триггеры, цепочка беспокойства, беспокойство о беспокойстве', done });
+		items.push({ label: 'Концептуализация заполнена: триггеры, цепочка беспокойства, беспокойство о беспокойстве', done, link: '/formulation' });
 	}
 
 	if (rule.min_beliefs_per_type) {
 		const need = rule.min_beliefs_per_type;
 		for (const t of BELIEF_TYPES) {
 			const c = db.prepare('SELECT count(*) AS c FROM beliefs WHERE type = ? AND archived_at IS NULL').get(t.id).c;
-			items.push({ label: `Убеждения «${t.label}»: ${c} из ${need}`, done: c >= need });
+			items.push({ label: `Убеждения «${t.label}»: ${c} из ${need}`, done: c >= need, link: '/beliefs' });
 		}
 	}
 
 	if (rule.min_scales) {
 		for (const [kind, need] of Object.entries(rule.min_scales)) {
 			const c = db.prepare('SELECT count(*) AS c FROM scales WHERE kind = ?').get(kind).c;
-			items.push({ label: `Шкала ${kind.toUpperCase()} пройдена: ${c} из ${need}`, done: c >= need });
+			items.push({ label: `Шкала ${kind.toUpperCase()} пройдена: ${c} из ${need}`, done: c >= need, link: '/scales' });
 		}
 	}
 
@@ -84,17 +86,55 @@ export function checkUnlock(stageNumber) {
 
 	if (rule.min_experiments) {
 		const c = db.prepare('SELECT count(*) AS c FROM experiments WHERE stage = ? AND completed_at IS NOT NULL').get(stageNumber).c;
-		items.push({ label: `Завершённых экспериментов: ${c} из ${rule.min_experiments}`, done: c >= rule.min_experiments });
+		items.push({ label: `Завершённых экспериментов: ${c} из ${rule.min_experiments}`, done: c >= rule.min_experiments, link: '/experiments' });
 	}
 
 	if (rule.belief_threshold) {
 		const { type, max } = rule.belief_threshold;
-		const avg = avgBelief(type);
 		const name = BELIEF_TYPES.find((t) => t.id === type)?.label ?? type;
-		items.push({
-			label: `Средняя оценка убеждений «${name}»: ${avg === null ? 'нет оценок' : avg + '%'} (нужно ниже ${max}%)`,
-			done: avg !== null && avg < max
-		});
+		const count = db.prepare('SELECT count(*) AS c FROM beliefs WHERE type = ? AND archived_at IS NULL').get(type).c;
+		const avg = avgBelief(type);
+		items.push(
+			count === 0
+				? { label: `Убеждений «${name}» у вас нет — это условие не нужно`, done: true }
+				: {
+						label: `Средняя оценка убеждений «${name}»: ${avg === null ? 'нет оценок' : avg + '%'} (нужно ниже ${max}%)`,
+						done: avg !== null && avg < max,
+						link: '/beliefs'
+					}
+		);
+	}
+
+	if (rule.requires_plan) {
+		const p = db.prepare('SELECT * FROM plan WHERE id = 1').get();
+		items.push({ label: 'План на случай триггера заполнен', done: !!p && filled(p.triggers, p.steps), link: '/plan' });
+	}
+
+	if (rule.requires_new_way) {
+		const p = db.prepare('SELECT * FROM plan WHERE id = 1').get();
+		items.push({ label: 'Итог «старый способ → новый способ» написан', done: !!p && filled(p.old_way, p.new_way), link: '/plan' });
+	}
+
+	// Фиксация результата этапа: переоценка убеждений, GAD-7, разбор с моделью
+	if (rule.requires_rerating) {
+		const total = db.prepare('SELECT count(*) AS c FROM beliefs WHERE archived_at IS NULL').get().c;
+		const rated = db
+			.prepare(
+				`SELECT count(*) AS c FROM beliefs b WHERE b.archived_at IS NULL
+				 AND EXISTS (SELECT 1 FROM belief_ratings r WHERE r.belief_id = b.id AND r.rated_at >= ?)`
+			)
+			.get(started).c;
+		items.push({ label: `Убеждения переоценены на этом этапе: ${rated} из ${total}`, done: rated >= total, link: '/beliefs' });
+	}
+
+	if (rule.requires_gad7) {
+		const c = db.prepare("SELECT count(*) AS c FROM scales WHERE kind = 'gad7' AND taken_at >= ?").get(started).c;
+		items.push({ label: 'GAD-7 пройдена на этом этапе', done: c > 0, link: '/scales' });
+	}
+
+	if (rule.requires_review) {
+		const c = db.prepare('SELECT count(*) AS c FROM stage_reviews WHERE stage = ? AND saved_at IS NOT NULL').get(stageNumber).c;
+		items.push({ label: 'Разбор этапа с моделью и ваш итог сохранены', done: c > 0, link: '/review' });
 	}
 
 	return { hasRule: true, ok: items.every((i) => i.done), items };

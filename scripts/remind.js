@@ -22,7 +22,7 @@ const db = new Database(dbFile, { readonly: true, fileMustExist: true });
 db.pragma("cipher='sqlcipher'");
 db.pragma('legacy=4');
 db.pragma(`key='${key}'`);
-const p = db.prepare('SELECT current_stage, reminder_worry_window, reminder_att, telegram_chat_id FROM profile WHERE id = 1').get();
+const p = db.prepare('SELECT current_stage, reminder_worry_window, reminder_att, reminder_weekly_review, telegram_chat_id FROM profile WHERE id = 1').get();
 db.close();
 
 const msk = new Date(Date.now() + 3 * 3600_000); // Москва: UTC+3 без перехода на летнее время
@@ -42,6 +42,10 @@ const due = [];
 if (p.current_stage >= 2) {
 	due.push(['worry_window', toMin(p.reminder_worry_window)]);
 	due.push(['att', toMin(p.reminder_att)]);
+	// Еженедельный обзор: «вс 19:00» — только в свой день недели
+	const w = /^(пн|вт|ср|чт|пт|сб|вс)\s+(\d\d:\d\d)$/i.exec((p.reminder_weekly_review ?? '').trim());
+	const DAYS = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+	if (w && DAYS[msk.getUTCDay()] === w[1].toLowerCase()) due.push(['weekly', toMin(w[2])]);
 }
 
 let failed = false;

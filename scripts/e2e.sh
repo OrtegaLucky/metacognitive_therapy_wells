@@ -72,6 +72,25 @@ c $B/experiments >/dev/null; has "Пройти с таймером"
 ok "$(c -d "kind=stop_reassurance&belief_id=&prediction=тревога будет расти&prediction_percent=60&belief_before_percent=" "$B/experiments?/create" | cut -d' ' -f1)" 400 "эксперимент этапа 6 на этапе 3 ещё закрыт"
 ok "$(c -d "reminder_worry_window=18:00&reminder_att=12:00&reminder_weekly_review=&telegram_chat_id=123" "$B/settings?/save" | cut -d' ' -f1)" 200 "настройки сохранены"
 ok "$(c -d "" "$B/settings?/telegram" | cut -d' ' -f1)" 400 "без токена бота проверка честно отказывает"
+echo "6б. Этапы 3–11: фиксация, разбор, решение или беспокойство, план"
+c $B/stage >/dev/null; has "GAD-7 пройдена на этом этапе"; has "Разбор этапа с моделью и ваш итог сохранены"; has "К чему прийти"
+c $B/review >/dev/null; has "Начать разбор этапа"
+ok "$(c -d "model=gemini-3.6-flash&text=" "$B/review?/say" | cut -d' ' -f1)" 400 "без ключа модели разбор честно отказывает"
+for i in 4 5 6 7; do c -d "confirm=yes" "$B/stage?/force" >/dev/null; done
+c $B/ >/dev/null; has "Решение или беспокойство?"; has "Срок: 7 дней"
+ok "$(c -d "worry=машина сломается&actionable=yes&step=записаться в сервис&when=завтра" "$B/problem?/add" | cut -d' ' -f1)" 200 "задача с шагом записана"
+ok "$(c -d "worry=а вдруг всё плохо&actionable=no" "$B/problem?/add" | cut -d' ' -f1)" 200 "беспокойство записано"
+ok "$(c -d "worry=x&actionable=yes&step=" "$B/problem?/add" | cut -d' ' -f1)" 400 "задача без шага отклонена"
+c $B/problem >/dev/null; has "записаться в сервис"
+c $B/stage >/dev/null; has "Записи «Решение или беспокойство» на этом этапе: 2 из 5"
+ok "$(c -d "id=1&type=usefulness" "$B/beliefs?/retype" | cut -d' ' -f1)" 200 "убеждение перенесено в другой тип"
+for i in 8 9; do c -d "confirm=yes" "$B/stage?/force" >/dev/null; done
+c $B/stage >/dev/null; has 'href="/plan">План на случай триггера заполнен'
+ok "$(c -d "triggers=новости&steps=откладываю до окна&warning_signs=&old_way=&new_way=" "$B/plan" | cut -d' ' -f1)" 200 "план сохранён"
+c $B/stage >/dev/null; grep -q 'href="/plan">План на случай' $T/out.html && { echo "  ✗ план не засчитан в условиях"; FAIL=1; } || echo "  ✓ план засчитан в условиях"
+for i in 10 11; do c -d "confirm=yes" "$B/stage?/force" >/dev/null; done
+c $B/ >/dev/null; has "Еженедельная проверка"
+c "$B/diary?kind=problem" >/dev/null; has "беспокойство, отложил"
 echo "7. Заголовки"; curl -s -D - -o /dev/null $B/login | grep -i "access-control" && { echo "  ✗ лишний CORS-заголовок"; FAIL=1; }
 curl -s -D - -o /dev/null -H "Cookie: sid=$(cat $J)" $B/ | grep -iE '^(content-security-policy|x-frame-options|referrer-policy|cache-control):' | cut -c1-90
 curl -s -D - -o /dev/null $B/login | grep -qi "^referrer-policy: no-referrer" && { echo "  ✗ no-referrer ломает формы в браузере (Origin: null)"; FAIL=1; } || echo "  ✓ Referrer-Policy не ломает формы"

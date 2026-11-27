@@ -20,7 +20,9 @@
 				"min_scales": {
 					"gad7": 1
 				}
-			}
+			},
+			"duration": "1–3 дня",
+			"outcome": "Понятна своя схема беспокойства; убеждения выписаны и оценены."
 		},
 		{
 			"number": 2,
@@ -44,8 +46,13 @@
 				"min_days": 7,
 				"min_entries": {
 					"trigger": 10
-				}
-			}
+				},
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			},
+			"duration": "7 дней",
+			"outcome": "Убедиться на опыте, что беспокойство можно отложить."
 		},
 		{
 			"number": 3,
@@ -69,8 +76,13 @@
 			],
 			"unlock_rule": {
 				"min_days": 7,
-				"min_experiments": 2
-			}
+				"min_experiments": 2,
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			},
+			"duration": "7 дней",
+			"outcome": "Вера в «беспокойство не остановить» заметно снизилась."
 		},
 		{
 			"number": 4,
@@ -101,8 +113,13 @@
 				"belief_threshold": {
 					"type": "uncontrollability",
 					"max": 30
-				}
-			}
+				},
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			},
+			"duration": "7 дней",
+			"outcome": "Вера в неконтролируемость ниже 30%; мысли не гоню, а оставляю в покое."
 		},
 		{
 			"number": 5,
@@ -126,8 +143,13 @@
 			],
 			"unlock_rule": {
 				"min_days": 7,
-				"min_experiments": 1
-			}
+				"min_experiments": 1,
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			},
+			"duration": "7 дней",
+			"outcome": "Проверено на опыте: сильное беспокойство не приводит к тому, чего боюсь."
 		},
 		{
 			"number": 6,
@@ -154,82 +176,160 @@
 				"belief_threshold": {
 					"type": "danger",
 					"max": 30
-				}
-			}
+				},
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			},
+			"duration": "7 дней",
+			"outcome": "Без поиска успокоения тревога спадает сама; вера в опасность ниже 30%."
 		},
 		{
 			"number": 7,
 			"title": "Польза, часть 1",
 			"goal": "Проверить, действительно ли беспокойство помогает.",
-			"tasks": [],
+			"tasks": [
+				"Каждый раз, когда ловите себя на беспокойстве, разбирать его на экране «Решение или беспокойство?».",
+				"Получить вопросы модели к убеждениям о пользе (экран «Убеждения») и ответить себе.",
+				"Провести эксперимент «День с беспокойством и день без».",
+				"В конце: переоценить убеждения, пройти GAD-7, сделать разбор этапа с моделью."
+			],
 			"journal_kinds_enabled": [
 				"trigger",
 				"worry_window",
 				"type2",
 				"att",
-				"free"
+				"free",
+				"problem"
 			],
 			"experiments_enabled": [
 				"day_with_without"
-			]
+			],
+			"duration": "7 дней",
+			"outcome": "Видна разница между решением задачи и беспокойством; польза беспокойства под вопросом.",
+			"unlock_rule": {
+				"min_days": 7,
+				"min_entries": {
+					"problem": 5
+				},
+				"min_experiments": 1,
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			}
 		},
 		{
 			"number": 8,
 			"title": "Польза, часть 2",
 			"goal": "Отказаться от беспокойства как инструмента.",
-			"tasks": [],
+			"tasks": [
+				"Не включать беспокойство «на всякий случай»: шаг — делать, остальное — откладывать до окна.",
+				"Разбирать беспокойство на экране «Решение или беспокойство?».",
+				"При необходимости повторить «День с беспокойством и день без».",
+				"В конце: переоценить убеждения, пройти GAD-7, сделать разбор этапа с моделью."
+			],
 			"journal_kinds_enabled": [
 				"trigger",
 				"worry_window",
 				"type2",
 				"att",
-				"free"
+				"free",
+				"problem"
 			],
 			"experiments_enabled": [
 				"day_with_without"
-			]
+			],
+			"duration": "7 дней",
+			"outcome": "Беспокойство больше не инструмент: вера в пользу ниже 30%.",
+			"unlock_rule": {
+				"min_days": 7,
+				"min_entries": {
+					"problem": 5
+				},
+				"belief_threshold": {
+					"type": "usefulness",
+					"max": 30
+				},
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			}
 		},
 		{
 			"number": 9,
 			"title": "Закрепление",
 			"goal": "Написать свой план действий на случай триггера.",
-			"tasks": [],
+			"tasks": [
+				"Заполнить «Мой план»: триггеры, что делаю, признаки, что снова вовлекаюсь.",
+				"Несколько дней пользоваться планом и поправить его.",
+				"В конце: переоценить убеждения, пройти GAD-7, сделать разбор этапа с моделью."
+			],
 			"journal_kinds_enabled": [
 				"trigger",
 				"worry_window",
 				"type2",
 				"att",
-				"free"
+				"free",
+				"problem"
 			],
-			"experiments_enabled": []
+			"experiments_enabled": [],
+			"duration": "3–7 дней",
+			"outcome": "Есть свой план на случай триггера, и он опробован.",
+			"unlock_rule": {
+				"min_days": 3,
+				"requires_plan": true,
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			}
 		},
 		{
 			"number": 10,
 			"title": "Профилактика рецидива",
 			"goal": "Подвести итог: старый способ и новый способ.",
-			"tasks": [],
+			"tasks": [
+				"Написать «старый способ → новый способ» на экране «Мой план».",
+				"Итоговая переоценка убеждений и GAD-7 — сравнить с началом.",
+				"Разбор этапа с моделью: что изменилось и что делать, если тревога вернётся."
+			],
 			"journal_kinds_enabled": [
 				"trigger",
 				"worry_window",
 				"type2",
 				"att",
-				"free"
+				"free",
+				"problem"
 			],
-			"experiments_enabled": []
+			"experiments_enabled": [],
+			"duration": "3–7 дней",
+			"outcome": "Итог: старый способ и новый, сравнение с началом программы.",
+			"unlock_rule": {
+				"min_days": 3,
+				"requires_new_way": true,
+				"requires_rerating": true,
+				"requires_gad7": true,
+				"requires_review": true
+			}
 		},
 		{
 			"number": 11,
 			"title": "Поддержка",
 			"goal": "Раз в неделю проверять себя и помнить о плане.",
-			"tasks": [],
+			"tasks": [
+				"Раз в неделю: GAD-7, переоценка убеждений, разбор недели с моделью.",
+				"Каждый день — как привыкли: откладывать, не искать успокоения, делать шаг, если он есть."
+			],
 			"journal_kinds_enabled": [
 				"trigger",
 				"worry_window",
 				"type2",
 				"att",
-				"free"
+				"free",
+				"problem"
 			],
-			"experiments_enabled": []
+			"experiments_enabled": [],
+			"duration": "без срока",
+			"outcome": "Раз в неделю проверять себя и держаться нового способа."
 		}
 	]
 }

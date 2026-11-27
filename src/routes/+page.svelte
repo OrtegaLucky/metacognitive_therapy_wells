@@ -4,13 +4,31 @@
 	let { data } = $props();
 	const enabled = $derived(data.stage?.journal_kinds_enabled ?? ['free']);
 	// У этих записей свои экраны или быстрая кнопка — остальное ведём в дневник
-	const SPECIAL = ['free', 'trigger', 'worry_window', 'att'];
+	const SPECIAL = ['free', 'trigger', 'worry_window', 'att', 'problem'];
+	const n = $derived(data.profile.current_stage);
 	const quick = $derived(enabled.filter((k) => !SPECIAL.includes(k)));
 </script>
 
 <p class="muted small">Этап {data.profile.current_stage}</p>
 <h1>{data.stage?.title ?? 'Этап'}</h1>
 {#if data.stage?.goal}<p>{data.stage.goal}</p>{/if}
+{#if data.stage?.duration}
+	<p class="small muted">Срок: {data.stage.duration}. К чему прийти: {data.stage.outcome}</p>
+{/if}
+
+{#if n === 11}
+	<div class="card">
+		<h2 style="margin-top: 0">Еженедельная проверка</h2>
+		<p class="small muted">
+			{data.lastReview ? `Последний разбор: ${data.lastReview} дн. назад.` : 'Разборов на этапе поддержки ещё не было.'}
+		</p>
+		<div class="grid">
+			<a class="btn secondary" href="/scales">GAD-7</a>
+			<a class="btn secondary" href="/beliefs">Переоценить убеждения</a>
+			<a class="btn" href="/review">Разбор недели</a>
+		</div>
+	</div>
+{/if}
 
 {#if enabled.includes('trigger')}
 	<form method="POST" action="/diary?/add" class="card">
@@ -45,6 +63,12 @@
 				Упражнение{#if data.today.att}<span class="small"> · ✓</span>{/if}
 			</a>
 		{/if}
+		{#if enabled.includes('problem')}
+			<a class="btn big secondary" href="/problem">
+				Решение или беспокойство?{#if data.today.problem}<span class="small"> · сегодня {data.today.problem}</span>{/if}
+			</a>
+		{/if}
+		{#if n >= 9}<a class="btn big secondary" href="/plan">Мой план</a>{/if}
 		{#each quick as kind}
 			<a class="btn big secondary" href="/diary?new={kind}&back=/">
 				{JOURNAL_KINDS[kind]}
@@ -76,12 +100,17 @@
 	{#if data.unlock.hasRule}
 		<ul class="checks">
 			{#each data.unlock.items as item}
-				<li class:done={item.done}>{item.done ? '✓' : '○'} {item.label}</li>
+				<li class:done={item.done}>
+					{item.done ? '✓' : '○'}
+					{#if item.link && !item.done}<a href={item.link}>{item.label}</a>{:else}{item.label}{/if}
+				</li>
 			{/each}
 		</ul>
 		{#if data.unlock.ok}<p class="done">Можно переходить — <a href="/stage">на страницу этапа</a>.</p>{/if}
+	{:else if n === 11}
+		<p class="muted">Это последний этап — поддержка без срока.</p>
 	{:else}
-		<p class="muted">Условия для этого этапа появятся в следующих фазах.</p>
+		<p class="muted">Условия для этого этапа ещё не заданы.</p>
 	{/if}
 </div>
 

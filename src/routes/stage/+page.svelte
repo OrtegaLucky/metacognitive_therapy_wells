@@ -4,9 +4,10 @@
 	let { data, form } = $props();
 </script>
 
-<p class="muted small">Этап {data.profile.current_stage} из 10</p>
+<p class="muted small">Этап {data.profile.current_stage} из 11</p>
 <h1>{data.stage?.title ?? 'Этап'}</h1>
 {#if data.stage?.goal}<p><b>Цель:</b> {data.stage.goal}</p>{/if}
+{#if data.stage?.duration}<p class="small"><b>Срок:</b> {data.stage.duration}. <b>К чему прийти:</b> {data.stage.outcome}</p>{/if}
 
 <div class="card">
 	{#if data.html}
@@ -23,7 +24,7 @@
 		{#if data.unlock.hasRule}
 			<ul class="checks">
 				{#each data.unlock.items as item}
-					<li class:done={item.done}>{item.done ? '✓' : '○'} {item.label}</li>
+					<li class:done={item.done}>{item.done ? "✓" : "○"} {#if item.link && !item.done}<a href={item.link}>{item.label}</a>{:else}{item.label}{/if}</li>
 				{/each}
 			</ul>
 			{#if data.unlock.ok}

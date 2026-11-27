@@ -17,6 +17,7 @@
 		}
 		if (e.kind === 'att' && p.exercise) parts.push(EXERCISES[p.exercise]?.label ?? p.exercise);
 		if (e.kind === 'att' && p.minutes != null) parts.push(`${p.minutes} мин`);
+		if (e.kind === 'problem') parts.push(`«${p.worry}» — ${p.actionable ? 'шаг: ' + p.step + (p.done ? ' ✓' : '') : 'беспокойство, отложил'}`);
 		return parts.join(', ');
 	}
 </script>

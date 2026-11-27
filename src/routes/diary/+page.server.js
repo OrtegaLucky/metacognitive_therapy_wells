@@ -15,7 +15,7 @@ const safeBack = (v) => (typeof v === 'string' && v.startsWith('/') && !v.starts
 
 export function load({ url }) {
 	const profile = getProfile();
-	const enabled = getStage(profile.current_stage)?.journal_kinds_enabled ?? ['free'];
+	const enabled = (getStage(profile.current_stage)?.journal_kinds_enabled ?? ['free']).filter((k) => k !== 'problem');
 	const kind = url.searchParams.get('kind') || '';
 	const stage = parseInt(url.searchParams.get('stage') || '', 10) || null;
 

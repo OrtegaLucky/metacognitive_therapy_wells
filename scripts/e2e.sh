@@ -79,7 +79,7 @@ ok "$(c -d "model=gemini-3.6-flash&text=" "$B/review?/say" | cut -d' ' -f1)" 400
 c "$B/review?kind=interim" >/dev/null; has "Начать промежуточный разбор"
 ok "$(c -d "model=gemini-3.6-flash&kind=interim&text=" "$B/review?/say" | cut -d' ' -f1)" 400 "промежуточный разбор без ключа тоже отказывает"
 for i in 4 5 6 7; do c -d "confirm=yes" "$B/stage?/force" >/dev/null; done
-c $B/ >/dev/null; has "Решение или беспокойство?"; has "Срок: 7 дней"
+c $B/ >/dev/null; has "Решение или беспокойство?"; has "Сделать сегодня"; has "До перехода на этап"; c $B/stage >/dev/null; has "7 дней"
 ok "$(c -d "worry=машина сломается&actionable=yes&step=записаться в сервис&when=завтра" "$B/problem?/add" | cut -d' ' -f1)" 200 "задача с шагом записана"
 ok "$(c -d "worry=а вдруг всё плохо&actionable=no" "$B/problem?/add" | cut -d' ' -f1)" 200 "беспокойство записано"
 ok "$(c -d "worry=x&actionable=yes&step=" "$B/problem?/add" | cut -d' ' -f1)" 400 "задача без шага отклонена"

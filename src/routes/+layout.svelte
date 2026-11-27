@@ -2,36 +2,13 @@
 	import '../app.css';
 	import { page } from '$app/stores';
 	import VoiceFields from '$lib/VoiceFields.svelte';
+	import { menuSections, pageTitle } from '$lib/menu.js';
 
 	let { data, children } = $props();
 
-	// Меню по группам: сверху — то, чем пользуются каждый день
-	const groups = [
-		[
-			['/', 'Сегодня'],
-			['/talk', 'Разговор'],
-			['/diary', 'Дневник']
-		],
-		[
-			['/window', 'Вечернее окно'],
-			['/exercises', 'Упражнения'],
-			['/problem', 'Решение или беспокойство'],
-			['/plan', 'Мой план'],
-			['/review', 'Разбор'],
-			['/stage', 'Этап'],
-			['/beliefs', 'Убеждения'],
-			['/experiments', 'Эксперименты'],
-			['/formulation', 'Схема'],
-			['/scales', 'GAD-7']
-		],
-		[
-			['/settings', 'Настройки'],
-			['/avatar-test', 'Проверка аватара']
-		]
-	];
-	const all = groups.flat();
-	const isActive = (href, path) => (href === '/' ? path === '/' : path.startsWith(href));
-	const title = $derived(all.find(([href]) => isActive(href, $page.url.pathname))?.[1] ?? '');
+	const sections = $derived(data.authed ? menuSections(data.stage, data.expFrom) : []);
+	const isActive = (href, path) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
+	const title = $derived(pageTitle($page.url.pathname, sections));
 
 	let open = $state(false);
 	// Закрываем меню при переходе на другую страницу
@@ -63,16 +40,39 @@
 		{#if open}
 			<button type="button" class="backdrop" aria-label="Закрыть меню" onclick={() => (open = false)}></button>
 			<nav id="menu">
-				{#each groups as g}
-					<ul>
-						{#each g as [href, label]}
-							<li><a {href} class:active={isActive(href, $page.url.pathname)}>{label}</a></li>
-						{/each}
-					</ul>
+				{#each sections as s, i}
+					<div class="sec">
+						{#if s.href}
+							<a href={s.href} class="head" class:active={isActive(s.href, $page.url.pathname)}>
+								<span class="n">{i + 1}</span>
+								<span>{s.title}{#if s.note}<small>{s.note}</small>{/if}</span>
+							</a>
+						{:else}
+							<div class="head plain"><span class="n">{i + 1}</span><span>{s.title}</span></div>
+						{/if}
+						{#if s.items.length}
+							<ul>
+								{#each s.items as it}
+									<li>
+										{#if it.from <= data.stage}
+											<a href={it.href} class:active={isActive(it.href, $page.url.pathname)}>
+												{it.label}{#if it.from === data.stage && it.from > 1}<span class="tag new">этап {it.from}</span>{/if}
+											</a>
+										{:else}
+											<span class="locked">🔒 {it.label} <small>· с этапа {it.from}</small></span>
+										{/if}
+									</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
 				{/each}
-				<form method="POST" action="/logout">
-					<button class="link" type="submit">Выйти</button>
-				</form>
+				<div class="foot">
+					<a href="/settings" class:active={isActive('/settings', $page.url.pathname)}>Настройки</a>
+					<form method="POST" action="/logout">
+						<button class="link" type="submit">Выйти</button>
+					</form>
+				</div>
 			</nav>
 		{/if}
 	</header>
@@ -149,26 +149,64 @@
 		position: absolute;
 		right: max(12px, calc((100vw - 760px) / 2 + 12px));
 		top: calc(100% + 6px);
-		width: min(280px, calc(100vw - 24px));
+		width: min(320px, calc(100vw - 24px));
+		max-height: calc(100vh - 70px);
+		overflow-y: auto;
 		background: var(--card);
 		border: 1px solid var(--line);
 		border-radius: 12px;
 		box-shadow: 0 8px 24px rgb(0 0 0 / 0.15);
-		padding: 6px 0;
+		padding: 4px 0;
+	}
+	.sec + .sec {
+		border-top: 1px solid var(--line);
+	}
+	.head {
+		display: flex;
+		gap: 10px;
+		align-items: baseline;
+		padding: 10px 16px 6px;
+		font-weight: 600;
+		text-decoration: none;
+		color: var(--text);
+	}
+	.head.plain {
+		cursor: default;
+	}
+	.head small {
+		display: block;
+		font-weight: 400;
+		font-size: 0.8rem;
+		opacity: 0.65;
+	}
+	.n {
+		min-width: 1.4em;
+		height: 1.4em;
+		border-radius: 50%;
+		border: 1px solid var(--line);
+		display: inline-grid;
+		place-items: center;
+		font-size: 0.75rem;
+		font-weight: 600;
+		opacity: 0.8;
 	}
 	ul {
 		list-style: none;
 		margin: 0;
-		padding: 4px 0;
+		padding: 0 0 6px;
 	}
-	ul + ul {
-		border-top: 1px solid var(--line);
-	}
-	nav a {
+	li a,
+	.locked {
 		display: block;
-		padding: 10px 18px;
+		padding: 7px 16px 7px 48px;
 		text-decoration: none;
 		color: var(--text);
+	}
+	.locked {
+		opacity: 0.45;
+	}
+	.locked small {
+		font-size: 0.8rem;
 	}
 	nav a:hover {
 		background: var(--bg);
@@ -177,8 +215,19 @@
 		color: var(--accent);
 		font-weight: 600;
 	}
-	nav form {
+	li .tag {
+		margin-left: 6px;
+	}
+	.foot {
 		border-top: 1px solid var(--line);
-		padding: 6px 12px 2px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 4px 4px 0 0;
+	}
+	.foot a {
+		padding: 10px 16px;
+		text-decoration: none;
+		color: var(--text);
 	}
 </style>

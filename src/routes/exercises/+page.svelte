@@ -2,6 +2,7 @@
 	import { onDestroy } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { EXERCISES } from '$lib/labels.js';
+	import { scopeTag } from '$lib/program.js';
 	import { createVoice, sleep, readSpeaker } from '$lib/speak.js';
 
 	let { data, form } = $props();
@@ -154,7 +155,7 @@
 		{#each available as [id, ex]}
 			<label class="inline option">
 				<input type="radio" name="ex" value={id} bind:group={exercise} />
-				<span><b>{ex.label}.</b> <span class="muted">{ex.hint}</span></span>
+				<span><b>{ex.label}.</b> <span class="tag" class:new={(ex.fromStage ?? 2) === data.stage}>{scopeTag(ex.fromStage ?? 2, data.stage)}</span> <span class="muted">{ex.hint}</span></span>
 			</label>
 		{/each}
 		{#if exercise !== 'bear'}

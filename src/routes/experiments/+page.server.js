@@ -5,6 +5,7 @@ import { fail } from '@sveltejs/kit';
 import { getDb, now } from '$lib/server/db.js';
 import { getProfile } from '$lib/server/stages.js';
 import { getStages } from '$lib/server/content.js';
+import { stageKinds } from '$lib/program.js';
 import { chatJson, LlmError, DEFAULT_MODEL, modelLabel } from '$lib/server/llm.js';
 import { EXPERIMENT_KINDS } from '$lib/experiments.js';
 import { BELIEF_LABEL } from '$lib/labels.js';
@@ -51,7 +52,7 @@ export function load() {
 			}
 			return { ...e, gpt_questions: q };
 		});
-	return { stage, kinds: enabledKinds(stage), beliefs, experiments };
+	return { stage, kinds: enabledKinds(stage), here: stageKinds(stage, getStages()), beliefs, experiments };
 }
 
 function getOpen(db, id) {

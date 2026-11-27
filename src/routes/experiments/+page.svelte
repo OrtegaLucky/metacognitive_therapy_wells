@@ -4,6 +4,8 @@
 	import GuidedRun from '$lib/GuidedRun.svelte';
 	import DayLog from '$lib/DayLog.svelte';
 	import { BELIEF_LABEL, fmtDate } from '$lib/labels.js';
+	import { expTag } from '$lib/program.js';
+	const tagOf = (kind) => expTag(kind, data.stage, data.here);
 
 	let { data, form } = $props();
 
@@ -43,7 +45,7 @@
 	<form method="POST" action="?/create" use:enhance={withPending('create')}>
 		<label for="kind">Вид</label>
 		<select id="kind" name="kind" bind:value={kind}>
-			{#each data.kinds as id}<option value={id}>{EXPERIMENT_KINDS[id].label}</option>{/each}
+			{#each data.kinds as id}<option value={id}>{EXPERIMENT_KINDS[id].label} — {tagOf(id)}</option>{/each}
 		</select>
 		<p class="small muted">{k?.how}</p>
 		{#if data.kinds.length === 1}
@@ -77,7 +79,7 @@
 {#each open as e (e.id)}
 	<div class="card">
 		<p class="small muted">{fmtDate(e.created_at)} · этап {e.stage}</p>
-		<h2>{EXPERIMENT_KINDS[e.kind]?.label ?? e.kind}</h2>
+		<h2>{EXPERIMENT_KINDS[e.kind]?.label ?? e.kind} <span class="tag" class:new={tagOf(e.kind)?.startsWith("этап")}>{tagOf(e.kind)}</span></h2>
 		{#if e.belief_text}<p class="small"><b>Убеждение:</b> {e.belief_text}{e.belief_before_percent != null ? ` — верю на ${e.belief_before_percent}%` : ''}</p>{/if}
 		<p class="small"><b>Прогноз:</b> {e.prediction}{e.prediction_percent != null ? ` (уверен на ${e.prediction_percent}%)` : ''}</p>
 		<p class="small muted">{EXPERIMENT_KINDS[e.kind]?.how}</p>

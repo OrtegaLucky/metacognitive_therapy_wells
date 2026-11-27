@@ -78,3 +78,7 @@ ul.checks li { padding: 4px 0; }
 table { width: 100%; border-collapse: collapse; }
 td, th { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
 blockquote { margin: 1rem 0; padding: 8px 12px; border-left: 3px solid var(--line); color: var(--muted); }
+
+/* Метка «этап N / весь курс» у упражнений и экспериментов */
+.tag { font-size: 0.75rem; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--line); white-space: nowrap; font-weight: normal; }
+.tag.new { border-color: var(--accent); color: var(--accent); }

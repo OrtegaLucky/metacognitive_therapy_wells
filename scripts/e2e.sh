@@ -45,7 +45,7 @@ c $B/ >/dev/null; has "Отстранённая осознанность"; has "
 for i in $(seq 1 10); do c -d "kind=trigger&postponed=yes&note=мысль $i&back=/" "$B/diary?/add" >/dev/null; done
 c -d "kind=worry_window&wanted_to_worry=no&minutes_used=5&note=" "$B/diary?/add" >/dev/null
 c "$B/diary?kind=trigger" >/dev/null; has "мысль 10"
-c $B/stage >/dev/null; has "10 из 10"; has "Дней на этапе: 0 из 7 (осталось 7)"; has "Пока нет"
+c $B/stage >/dev/null; has "10 из 10"; has "Дней на этапе: 0 из 7 (осталось 7)"; has "Переход откроется"; has "Упражнения этапа"; has "Озвучить описание"
 ok "$(c -d "" "$B/stage?/advance" | cut -d' ' -f1)" 400 "переход 2 → 3 без 7 дней запрещён"
 c $B/window >/dev/null; has "Хочется ли сейчас беспокоиться"
 ok "$(c -d "wanted=yes&minutes=7&note=окно тест" $B/window | cut -d' ' -f1)" 200 "вечернее окно сохранено"

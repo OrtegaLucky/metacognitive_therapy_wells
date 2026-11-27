@@ -76,6 +76,8 @@ echo "6б. Этапы 3–11: фиксация, разбор, решение и�
 c $B/stage >/dev/null; has "GAD-7 пройдена на этом этапе"; has "Разбор этапа с моделью и ваш итог сохранены"; has "К чему прийти"
 c $B/review >/dev/null; has "Начать разбор этапа"
 ok "$(c -d "model=gemini-3.6-flash&text=" "$B/review?/say" | cut -d' ' -f1)" 400 "без ключа модели разбор честно отказывает"
+c "$B/review?kind=interim" >/dev/null; has "Начать промежуточный разбор"
+ok "$(c -d "model=gemini-3.6-flash&kind=interim&text=" "$B/review?/say" | cut -d' ' -f1)" 400 "промежуточный разбор без ключа тоже отказывает"
 for i in 4 5 6 7; do c -d "confirm=yes" "$B/stage?/force" >/dev/null; done
 c $B/ >/dev/null; has "Решение или беспокойство?"; has "Срок: 7 дней"
 ok "$(c -d "worry=машина сломается&actionable=yes&step=записаться в сервис&when=завтра" "$B/problem?/add" | cut -d' ' -f1)" 200 "задача с шагом записана"

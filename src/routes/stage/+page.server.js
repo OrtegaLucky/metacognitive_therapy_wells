@@ -1,4 +1,5 @@
 // Экран «Этап» по шести блокам: чтение, упражнения этапа, эксперименты этапа, всего курса, фиксация результата
+import { daysSinceReview } from '$lib/server/review.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fail, redirect } from '@sveltejs/kit';
@@ -34,7 +35,7 @@ export function load() {
 	const expDone = Object.fromEntries(
 		db.prepare('SELECT kind, count(*) AS c FROM experiments WHERE stage = ? AND completed_at IS NOT NULL GROUP BY kind').all(n).map((r) => [r.kind, r.c])
 	);
-	const review = db.prepare('SELECT user_summary, saved_at FROM stage_reviews WHERE stage = ? AND saved_at IS NOT NULL ORDER BY id DESC LIMIT 1').get(n);
+	const review = db.prepare("SELECT user_summary, saved_at FROM stage_reviews WHERE stage = ? AND kind = 'stage' AND saved_at IS NOT NULL ORDER BY id DESC LIMIT 1").get(n);
 	return {
 		profile,
 		stage: getStage(n),
@@ -45,6 +46,7 @@ export function load() {
 		expDone,
 		review: review && { ...JSON.parse(review.user_summary || '{}'), saved_at: review.saved_at },
 		unlock: checkUnlock(n),
+		sinceLast: daysSinceReview(n),
 		route: getStages().map((s) => ({ number: s.number, title: s.title })),
 		history: db.prepare('SELECT stage, started_at, manual FROM stage_history ORDER BY id').all(),
 		isLast: n >= LAST_STAGE

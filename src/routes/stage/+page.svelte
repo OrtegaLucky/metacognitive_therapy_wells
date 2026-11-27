@@ -137,10 +137,12 @@
 				<p><b>Понял:</b> {data.review.learned}</p>
 				{#if data.review.still_hard}<p><b>Трудно:</b> {data.review.still_hard}</p>{/if}
 				{#if data.review.next_focus}<p><b>Дальше:</b> {data.review.next_focus}</p>{/if}
+				{#if data.review.ready_reason}<p><b>Мнение модели:</b> {data.review.ready ? "готовы к следующему этапу" : "стоит задержаться"} — {data.review.ready_reason} <span class="muted">Решение за вами.</span></p>{/if}
 			</div>
 		{:else if data.unlock.items?.some((i) => i.link === '/review')}
 			<p><a class="btn secondary" href="/review">Разбор этапа с моделью</a></p>
 		{/if}
+		<p class="small"><a href="/review?kind=interim">Промежуточный разбор</a> — короткая проверка посреди этапа{#if data.sinceLast >= 7}; с прошлого разбора прошла неделя, самое время{/if}.</p>
 		{#if data.unlock.ok}
 			<form method="POST" action="?/advance">
 				<button type="submit" class="big">Перейти на этап {n + 1}</button>

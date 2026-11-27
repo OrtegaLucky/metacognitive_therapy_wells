@@ -133,7 +133,7 @@ export function checkUnlock(stageNumber) {
 	}
 
 	if (rule.requires_review) {
-		const c = db.prepare('SELECT count(*) AS c FROM stage_reviews WHERE stage = ? AND saved_at IS NOT NULL').get(stageNumber).c;
+		const c = db.prepare("SELECT count(*) AS c FROM stage_reviews WHERE stage = ? AND kind = 'stage' AND saved_at IS NOT NULL").get(stageNumber).c;
 		items.push({ label: 'Разбор этапа с моделью и ваш итог сохранены', done: c > 0, link: '/review' });
 	}
 

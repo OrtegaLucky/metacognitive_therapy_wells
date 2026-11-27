@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { EXPERIMENT_KINDS } from '$lib/experiments.js';
 	import GuidedRun from '$lib/GuidedRun.svelte';
+	import DayLog from '$lib/DayLog.svelte';
 	import { BELIEF_LABEL, fmtDate } from '$lib/labels.js';
 
 	let { data, form } = $props();
@@ -18,6 +19,8 @@
 	const done = $derived(data.experiments.filter((e) => e.completed_at));
 
 	let pending = $state(null); // какая кнопка сейчас ждёт ответа
+	// Раскрыт ли блок «Новый эксперимент»: своё состояние, чтобы он не сворачивался при выборе в списке
+	let newOpen = $state(!data.experiments.length);
 
 	const withPending = (name) => () => {
 		pending = name;
@@ -35,7 +38,7 @@
 	ваш собственный вывод. Модель только задаёт вопросы, вывод пишете вы.
 </p>
 
-<details class="card" open={!data.experiments.length}>
+<details class="card" bind:open={newOpen}>
 	<summary><b>Новый эксперимент</b></summary>
 	<form method="POST" action="?/create" use:enhance={withPending('create')}>
 		<label for="kind">Вид</label>
@@ -79,6 +82,7 @@
 		<p class="small"><b>Прогноз:</b> {e.prediction}{e.prediction_percent != null ? ` (уверен на ${e.prediction_percent}%)` : ''}</p>
 		<p class="small muted">{EXPERIMENT_KINDS[e.kind]?.how}</p>
 		{#if e.kind === 'amplify_release' || e.kind === 'lose_control'}<GuidedRun kind={e.kind} id={e.id} />{/if}
+		{#if e.kind === 'stop_reassurance'}<DayLog id={e.id} />{/if}
 
 		<form method="POST" use:enhance={withPending(e.id)}>
 			<input type="hidden" name="id" value={e.id} />

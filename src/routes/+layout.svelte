@@ -1,6 +1,7 @@
 <script>
 	import '../app.css';
 	import { page } from '$app/stores';
+	import VoiceFields from '$lib/VoiceFields.svelte';
 
 	let { data, children } = $props();
 
@@ -73,6 +74,8 @@
 		{/if}
 	</header>
 {/if}
+
+{#if data.authed}<VoiceFields />{/if}
 
 <main>
 	{@render children()}

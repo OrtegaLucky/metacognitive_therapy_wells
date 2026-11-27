@@ -314,7 +314,7 @@
 			</label>
 		{/if}
 		<label for="text" class="small muted">Или напишите (Ctrl+Enter — отправить)</label>
-		<textarea id="text" bind:value={text} onkeydown={onKey} maxlength="4000" disabled={busy || recording}></textarea>
+		<textarea id="text" data-novoice="1" bind:value={text} onkeydown={onKey} maxlength="4000" disabled={busy || recording}></textarea>
 		<div class="row" style="margin-top: 8px">
 			<button type="button" style="flex: 1" disabled={busy || recording || !text.trim()} onclick={() => send(text.trim())}>Отправить</button>
 			{#if userTurns >= 3 && !draft}

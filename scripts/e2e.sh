@@ -69,6 +69,7 @@ c $B/stage >/dev/null; has "Завершённых экспериментов: 0
 c $B/ >/dev/null; has "Усилить и отпустить"
 ok "$(c -d "kind=amplify_release&belief_id=&prediction=не смогу остановиться&prediction_percent=70&belief_before_percent=" "$B/experiments?/create" | cut -d' ' -f1)" 200 "эксперимент этапа 3 создан"
 c $B/experiments >/dev/null; has "Пройти с таймером"
+ok "$(c -d "kind=stop_reassurance&belief_id=&prediction=тревога будет расти&prediction_percent=60&belief_before_percent=" "$B/experiments?/create" | cut -d' ' -f1)" 400 "эксперимент этапа 6 на этапе 3 ещё закрыт"
 ok "$(c -d "reminder_worry_window=18:00&reminder_att=12:00&reminder_weekly_review=&telegram_chat_id=123" "$B/settings?/save" | cut -d' ' -f1)" 200 "настройки сохранены"
 ok "$(c -d "" "$B/settings?/telegram" | cut -d' ' -f1)" 400 "без токена бота проверка честно отказывает"
 echo "7. Заголовки"; curl -s -D - -o /dev/null $B/login | grep -i "access-control" && { echo "  ✗ лишний CORS-заголовок"; FAIL=1; }
